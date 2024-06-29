@@ -1,5 +1,12 @@
 import { Application, Renderer } from "pixi.js";
-import { AddTile, Tile } from "./tile";
+import { Tile } from "./tile";
+
+// メモ
+// このアルゴリズムは，ある方向に扇形を構成するようにタイルを配置していく．
+// この方向を6回することで，六角形のタイルを構成することができる．
+
+// 扇形のアルゴリズムは，1, 2, 3, 4,... というようにタイルを伸ばしていく．
+// 最初のタイルのみ，2つ配置し，それ以降は1つずつ配置する．
 
 function addLayer(
   parentLayer: Tile[],
@@ -7,11 +14,9 @@ function addLayer(
   tiles: Tile[]
 ): Tile[] {
   return parentLayer.flatMap((parentTile, index) => {
-    const newTiles = [
-      AddTile(parentTile, tiles.length + index + 1, direction + 1),
-    ];
+    const newTiles = [parentTile.AddTile(direction + 1)];
     if (index === 0) {
-      newTiles.unshift(AddTile(parentTile, tiles.length, direction));
+      newTiles.unshift(parentTile.AddTile(direction));
     }
     return newTiles;
   });
@@ -26,11 +31,11 @@ export function Stage(
 ) {
   const tiles: Tile[] = [];
 
-  const centerTile = Tile(x, y, 0, radius);
+  const centerTile = new Tile({ x: x, y: y, number: 0, radius: radius });
   tiles.push(centerTile);
 
   for (let direction = 0; direction < 6; direction++) {
-    let currentLayer = [AddTile(centerTile, tiles.length, direction)];
+    let currentLayer = [centerTile.AddTile(direction)];
     tiles.push(...currentLayer);
 
     for (let layerIndex = 2; layerIndex <= level; layerIndex++) {
@@ -41,10 +46,3 @@ export function Stage(
 
   tiles.forEach((tile) => app.stage.addChild(tile.container));
 }
-
-// メモ
-// このアルゴリズムは，ある方向に扇形を構成するようにタイルを配置していく．
-// この方向を6回することで，六角形のタイルを構成することができる．
-
-// 扇形のアルゴリズムは，1, 2, 3, 4,... というようにタイルを伸ばしていく．
-// 最初のタイルのみ，2つ配置し，それ以降は1つずつ配置する．
