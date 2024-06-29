@@ -1,4 +1,4 @@
-import { Application, Renderer } from "pixi.js";
+import type { Application, Renderer } from "pixi.js";
 import { Tile } from "./tile";
 
 // メモ
@@ -44,5 +44,6 @@ export function Stage(
     }
   }
 
+  // biome-ignore lint/complexity/noForEach: <explanation>
   tiles.forEach((tile) => app.stage.addChild(tile.container));
 }

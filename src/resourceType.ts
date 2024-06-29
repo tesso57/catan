@@ -1,10 +1,10 @@
 export enum ResourceEnum {
-  Wood,
-  Brick,
-  Sheep,
-  Wheat,
-  Ore,
-  Desert,
+  Wood = 0,
+  Brick = 1,
+  Sheep = 2,
+  Wheat = 3,
+  Ore = 4,
+  Desert = 5,
 }
 
 export function ResourceColor(resource: ResourceEnum) {
