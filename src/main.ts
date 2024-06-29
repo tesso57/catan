@@ -14,7 +14,13 @@ import { Stage } from "./stage";
 	const x = app.screen.width / 2;
 	const y = app.screen.height / 2;
 	const radius = 50;
-	const level = 3;
+	const level = 2;
 	const stage = new Stage(x, y, radius, level);
 	app.stage.addChild(stage.container);
+	stage.Init();
+	// stage.genCircle();
+	stage.genRoad();
+	app.ticker.add(() => {
+		// This is the game loop.
+	});
 })();

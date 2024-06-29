@@ -1,4 +1,11 @@
-import { type ColorSource, Container, Graphics, PI_2, Text } from "pixi.js";
+import {
+	Circle,
+	type ColorSource,
+	Container,
+	Graphics,
+	PI_2,
+	Text,
+} from "pixi.js";
 import { ResourceEnum, ResourceColor } from "./resourceType";
 
 // タイルクラス
@@ -38,6 +45,18 @@ export class Tile {
 
 	get container() {
 		return this._container;
+	}
+
+	set number(number: number) {
+		this._number = number;
+		const text = this._container.children[1] as Text;
+		text.text = number.toString();
+	}
+
+	set type(type: ResourceEnum) {
+		this._type = type;
+		const hex = this._container.children[0] as Graphics;
+		hex.localColor = ResourceColor(type);
 	}
 
 	// 隣接するタイルを追加
