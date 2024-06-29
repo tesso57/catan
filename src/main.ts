@@ -14,6 +14,6 @@ import { Stage } from "./stage";
   const x = app.screen.width / 2;
   const y = app.screen.height / 2;
   const radius = 50;
-  const level = 2;
+  const level = 3;
   Stage(app, x, y, radius, level);
 })();

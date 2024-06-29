@@ -7,7 +7,9 @@ function addLayer(
   tiles: Tile[]
 ): Tile[] {
   return parentLayer.flatMap((parentTile, index) => {
-    const newTiles = [AddTile(parentTile, tiles.length, direction + 1)];
+    const newTiles = [
+      AddTile(parentTile, tiles.length + index + 1, direction + 1),
+    ];
     if (index === 0) {
       newTiles.unshift(AddTile(parentTile, tiles.length, direction));
     }
