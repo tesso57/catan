@@ -1,4 +1,4 @@
-import type { Application, Renderer } from "pixi.js";
+import { Container, type Application, type Renderer } from "pixi.js";
 import { Tile } from "./tile";
 
 // メモ
@@ -8,42 +8,42 @@ import { Tile } from "./tile";
 // 扇形のアルゴリズムは，1, 2, 3, 4,... というようにタイルを伸ばしていく．
 // 最初のタイルのみ，2つ配置し，それ以降は1つずつ配置する．
 
-function addLayer(
-  parentLayer: Tile[],
-  direction: number,
-  tiles: Tile[]
-): Tile[] {
-  return parentLayer.flatMap((parentTile, index) => {
-    const newTiles = [parentTile.AddTile(direction + 1)];
-    if (index === 0) {
-      newTiles.unshift(parentTile.AddTile(direction));
-    }
-    return newTiles;
-  });
+export class Stage {
+	private _container: Container;
+	private _tiles: Tile[];
+	constructor(x: number, y: number, radius: number, level: number) {
+		this._container = new Container();
+		this._tiles = [];
+
+		const centerTile = new Tile({ x: x, y: y, number: 0, radius: radius });
+		this._tiles.push(centerTile);
+
+		for (let direction = 0; direction < 6; direction++) {
+			let currentLayer = [centerTile.AddTile(direction)];
+			this._tiles.push(...currentLayer);
+
+			for (let layerIndex = 2; layerIndex <= level; layerIndex++) {
+				currentLayer = addLayer(currentLayer, direction);
+				this._tiles.push(...currentLayer);
+			}
+		}
+
+		for (const tile of this._tiles) {
+			this._container.addChild(tile.container);
+		}
+	}
+
+	get container() {
+		return this._container;
+	}
 }
 
-export function Stage(
-  app: Application<Renderer>,
-  x: number,
-  y: number,
-  radius: number,
-  level: number
-) {
-  const tiles: Tile[] = [];
-
-  const centerTile = new Tile({ x: x, y: y, number: 0, radius: radius });
-  tiles.push(centerTile);
-
-  for (let direction = 0; direction < 6; direction++) {
-    let currentLayer = [centerTile.AddTile(direction)];
-    tiles.push(...currentLayer);
-
-    for (let layerIndex = 2; layerIndex <= level; layerIndex++) {
-      currentLayer = addLayer(currentLayer, direction, tiles);
-      tiles.push(...currentLayer);
-    }
-  }
-
-  // biome-ignore lint/complexity/noForEach: <explanation>
-  tiles.forEach((tile) => app.stage.addChild(tile.container));
+function addLayer(parentLayer: Tile[], direction: number): Tile[] {
+	return parentLayer.flatMap((parentTile, index) => {
+		const newTiles = [parentTile.AddTile(direction + 1)];
+		if (index === 0) {
+			newTiles.unshift(parentTile.AddTile(direction));
+		}
+		return newTiles;
+	});
 }
