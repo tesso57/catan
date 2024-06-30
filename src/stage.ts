@@ -78,20 +78,8 @@ export class Stage {
 			}
 		}
 
-		const unique = circles.reduce((acc: Graphics[], cur: Graphics) => {
-			if (
-				acc.every(
-					(circle) =>
-						Math.round(circle.bounds.x) !== Math.round(cur.bounds.x) ||
-						Math.round(circle.bounds.y) !== Math.round(cur.bounds.y),
-				)
-			) {
-				acc.push(cur);
-			}
-			return acc;
-		}, []);
-
-		return unique;
+		const u = unique(circles);
+		return u;
 	}
 
 	public genRoad() {
@@ -118,16 +106,18 @@ export class Stage {
 						next.bounds.x + next.bounds.width / 2,
 						next.bounds.y + next.bounds.height / 2,
 					)
-					.stroke({ color: 0xffffff, width: 10 });
+					.stroke({ color: 0xffffff, width: 1 });
 				road.interactive = true;
 				road.on("pointerdown", () => {
-					// road.tint = 0xff0000;
+					road.tint = 0xff0000;
 					console.log("pointerover");
 				});
 				roads.push(road);
 			}
 		}
-		this._container.addChild(...roads);
+		const u = unique(roads);
+		this._container.addChild(...u);
+		console.log(u.length);
 	}
 }
 
@@ -139,4 +129,27 @@ function addLayer(parentLayer: Tile[], direction: number): Tile[] {
 		}
 		return newTiles;
 	});
+}
+
+function unique(arr: Graphics[]) {
+	return arr.reduce((acc: Graphics[], cur: Graphics) => {
+		if (
+			acc.every(
+				(elem) =>
+					Math.abs(
+						elem.bounds.x +
+							elem.bounds.width / 2 -
+							(cur.bounds.x + cur.bounds.width / 2),
+					) > 0.1 ||
+					Math.abs(
+						elem.bounds.y +
+							elem.bounds.height / 2 -
+							(cur.bounds.y + cur.bounds.height / 2),
+					) > 0.1,
+			)
+		) {
+			acc.push(cur);
+		}
+		return acc;
+	}, []);
 }
