@@ -19,7 +19,7 @@ import { Stage } from "./stage";
 	app.stage.addChild(stage.container);
 	stage.Init();
 	// stage.genCircle();
-	stage.genRoad();
+	stage.genCircle();
 	app.ticker.add(() => {
 		// This is the game loop.
 	});
