@@ -36,14 +36,18 @@ export class Stage {
 		}
 
 		// 左上から順番に配置する．
+		// * 100 しているのは，浮動小数点の誤差を考慮している．
 		this._tiles.sort((a, b) => {
-			if (a.container.y !== b.container.y) {
-				return a.container.y - b.container.y;
+			if (Math.round(a.container.y * 100) !== Math.round(b.container.y * 100)) {
+				return (
+					Math.round(a.container.y * 100) - Math.round(b.container.y * 100)
+				);
 			}
-			return a.container.x - b.container.x;
+			return Math.round(a.container.x * 100) - Math.round(b.container.x * 100);
 		});
 
-		for (const tile of this._tiles) {
+		for (const [i, tile] of this._tiles.entries()) {
+			// console.log(i, tile.container.x, tile.container.y);
 			this._container.addChild(tile.container);
 		}
 	}
