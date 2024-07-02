@@ -16,20 +16,55 @@ export class Stage {
 	private _container: Container;
 	private _tiles: Tile[];
 	private _radius: number;
+	private _level: number;
+	private _x: number;
+	private _y: number;
 
 	constructor(x: number, y: number, radius: number, level: number) {
 		this._container = new Container();
 		this._tiles = [];
 		this._radius = radius;
+		this._level = level;
+		this._x = x;
+		this._y = y;
+		this.Create(x, y);
+	}
 
-		const centerTile = new Tile({ x: x, y: y, number: 0, radius: radius });
+	get container() {
+		return this._container;
+	}
+
+	set level(level: number) {
+		if (this._level !== level) {
+			this._level = level;
+			this._container.removeChildren();
+			this._tiles = [];
+			this.Create(this._x, this._y);
+		}
+	}
+
+	public Init() {
+		for (const [i, tile] of this._tiles.entries()) {
+			tile.number = i;
+			// tile.number = Math.floor(Math.random() * 12) + 1;
+			tile.type = Math.floor(Math.random() * 6);
+		}
+	}
+
+	public Create(x: number, y: number) {
+		const centerTile = new Tile({
+			x: x,
+			y: y,
+			number: 0,
+			radius: this._radius,
+		});
 		this._tiles.push(centerTile);
 
 		for (let direction = 0; direction < 6; direction++) {
 			let currentLayer = [centerTile.AddTile(direction)];
 			this._tiles.push(...currentLayer);
 
-			for (let layerIndex = 2; layerIndex <= level; layerIndex++) {
+			for (let layerIndex = 2; layerIndex <= this._level; layerIndex++) {
 				currentLayer = addLayer(currentLayer, direction);
 				this._tiles.push(...currentLayer);
 			}
@@ -50,18 +85,9 @@ export class Stage {
 			// console.log(i, tile.container.x, tile.container.y);
 			this._container.addChild(tile.container);
 		}
-	}
 
-	get container() {
-		return this._container;
-	}
-
-	public Init() {
-		for (const [i, tile] of this._tiles.entries()) {
-			tile.number = i;
-			// tile.number = Math.floor(Math.random() * 12) + 1;
-			tile.type = Math.floor(Math.random() * 6);
-		}
+		this.genCircle();
+		this.Init();
 	}
 
 	public genCircle() {
