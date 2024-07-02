@@ -1,5 +1,6 @@
 import { Container, Graphics, PI_2 } from "pixi.js";
 import { Tile } from "./tile";
+import { ObjectPool } from "./objectPool";
 
 // メモ
 // このアルゴリズムは，ある方向に扇形を構成するようにタイルを配置していく．
@@ -19,14 +20,18 @@ export class Stage {
 	private _level: number;
 	private _x: number;
 	private _y: number;
+	private _graphicPool: ObjectPool<Graphics>;
 
 	constructor(x: number, y: number, radius: number, level: number) {
+		// メンバー変数の初期化
 		this._container = new Container();
 		this._tiles = [];
 		this._radius = radius;
 		this._level = level;
 		this._x = x;
 		this._y = y;
+		this._graphicPool = new ObjectPool(() => new Graphics());
+
 		this.Create(x, y);
 	}
 
@@ -37,8 +42,14 @@ export class Stage {
 	set level(level: number) {
 		if (this._level !== level) {
 			this._level = level;
-			this._container.removeChildren();
 			this._tiles = [];
+			for (const child of this._container.children) {
+				if (child instanceof Graphics) {
+					child.clear();
+					this._graphicPool.Return(child);
+				}
+			}
+			this._container.removeChildren();
 			this.Create(this._x, this._y);
 		}
 	}
@@ -80,60 +91,82 @@ export class Stage {
 			}
 			return Math.round(a.container.x * 100) - Math.round(b.container.x * 100);
 		});
-
+		const tileContainer = new Container();
 		for (const [i, tile] of this._tiles.entries()) {
 			// console.log(i, tile.container.x, tile.container.y);
-			this._container.addChild(tile.container);
+			tileContainer.addChild(tile.container);
 		}
-
+		this._container.addChild(tileContainer);
 		this.genCircle();
 		this.Init();
 	}
 
 	public genCircle() {
+		const vertexes = new Set();
 		// 頂点の円を描画
-		const circles: Graphics[] = unique(
-			this._tiles.flatMap((tile) => {
-				const pos = tile.container.position;
-				const tmp: Graphics[] = [];
-				for (let i = 0; i < 6; i++) {
-					const angle = (i * PI_2) / 6 - PI_2 / 4;
-					const x = this._radius * Math.cos(angle);
-					const y = this._radius * Math.sin(angle);
-					tmp.push(
-						new Graphics()
-							.circle(pos.x + x, pos.y + y, CIRCLE_RADIUS)
-							.fill(0xffffff),
-					);
+		const circles: Graphics[] = this._tiles.flatMap((tile) => {
+			const pos = tile.container.position;
+			const tmp: Graphics[] = [];
+			for (let i = 0; i < 6; i++) {
+				const angle = (i * PI_2) / 6 - PI_2 / 4;
+				const x = this._radius * Math.cos(angle);
+				const y = this._radius * Math.sin(angle);
+				const key = `${Math.floor(pos.x + x)},${Math.floor(pos.y + y)}`;
+				if (vertexes.has(key)) {
+					continue;
 				}
-				return tmp;
-			}),
-		);
-
+				vertexes.add(key);
+				const g = this._graphicPool.Get();
+				tmp.push(g.circle(pos.x + x, pos.y + y, CIRCLE_RADIUS).fill(0xffffff));
+			}
+			return tmp;
+		});
 		this._container.addChild(...circles);
 
 		// 道を描画
+		const roadSet = new Set();
 		const roads: Graphics[] = [];
 		for (const [i, circle] of circles.entries()) {
-			const nexts = circles.filter((c, j) => {
+			const circlePos = position(circle);
+
+			const nexts: Graphics[] = [];
+			for (const [j, c] of circles.entries()) {
 				if (i === j) {
-					return false;
+					continue;
 				}
-				return distance(circle, c) <= this._radius * 1.1;
-			});
+				if (nexts.length > 3) {
+					break;
+				}
+
+				const nextPos = position(c);
+				const dx = circlePos.x - nextPos.x;
+				const dy = circlePos.y - nextPos.y;
+				const dist = dx ** 2 + dy ** 2;
+
+				if (this._radius ** 2 * 0.5 < dist && dist <= this._radius ** 2 * 1.1) {
+					nexts.push(c);
+				}
+			}
 
 			for (const next of nexts) {
+				const nextPos = position(next);
 				const angle = Math.atan2(
-					position(circle).y - position(next).y,
-					position(circle).x - position(next).x,
+					circlePos.y - nextPos.y,
+					circlePos.x - nextPos.x,
 				);
 
 				const midpoint = {
-					x: (position(circle).x + position(next).x) / 2,
-					y: (position(circle).y + position(next).y) / 2,
+					x: (circlePos.x + nextPos.x) / 2,
+					y: (circlePos.y + nextPos.y) / 2,
 				};
 
-				const road = new Graphics()
+				const key = `${Math.floor(midpoint.x * 10)},${Math.floor(midpoint.y * 10)}`;
+				if (roadSet.has(key)) {
+					continue;
+				}
+				roadSet.add(key);
+				const road = this._graphicPool.Get();
+				road
 					.moveTo(
 						midpoint.x + ROAD_LENGTH * Math.cos(angle),
 						midpoint.y + ROAD_LENGTH * Math.sin(angle),
@@ -152,8 +185,7 @@ export class Stage {
 				roads.push(road);
 			}
 		}
-		const u = unique(roads);
-		this._container.addChild(...u);
+		this._container.addChild(...roads);
 	}
 }
 
@@ -167,30 +199,9 @@ function addLayer(parentLayer: Tile[], direction: number): Tile[] {
 	});
 }
 
-function unique(arr: Graphics[]) {
-	return arr.reduce((acc: Graphics[], cur: Graphics) => {
-		if (
-			acc.every(
-				(elem) =>
-					Math.abs(position(elem).x - position(cur).x) > 0.1 ||
-					Math.abs(position(elem).y - position(cur).y) > 0.1,
-			)
-		) {
-			acc.push(cur);
-		}
-		return acc;
-	}, []);
-}
-
 function position(a: Graphics) {
 	return {
 		x: a.bounds.x + a.bounds.width / 2,
 		y: a.bounds.y + a.bounds.height / 2,
 	};
-}
-
-function distance(a: Graphics, b: Graphics) {
-	const dx = position(a).x - position(b).x;
-	const dy = position(a).y - position(b).y;
-	return Math.sqrt(dx ** 2 + dy ** 2);
 }

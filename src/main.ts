@@ -31,7 +31,7 @@ import { Slider } from "@pixi/ui";
 		fill: fill,
 		slider: slider,
 		min: 0,
-		max: 10,
+		max: 15,
 		value: level,
 	});
 	singleSlider.x = 10;
@@ -48,8 +48,13 @@ import { Slider } from "@pixi/ui";
 	sliderText.x = 30 + width;
 	sliderText.y = 10;
 	app.stage.addChild(singleSlider, sliderText);
-	app.ticker.add(() => {
+	let time = 0;
+	app.ticker.add((ticker) => {
+		time += ticker.deltaMS;
 		sliderText.text = `Value: ${singleSlider.value.toFixed(2)}`;
-		stage.level = Math.floor(singleSlider.value);
+		if (time > 100) {
+			time = 0;
+			stage.level = Math.floor(singleSlider.value);
+		}
 	});
 })();
